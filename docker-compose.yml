@@ -1,0 +1,7 @@
+services:
+  texturecraft-web:
+    image: ghcr.io/mikapst/texturecraft-web:latest
+    container_name: texturecraft-web
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
