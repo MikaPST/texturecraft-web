@@ -3,7 +3,6 @@
 </p>
 
 <h1 align="center">TextureCraft Web — Docker Image</h1>
-
 <p align="center">
   A community-maintained Docker image for
   <a href="https://github.com/storytold/texturecraft">TextureCraft</a>,
@@ -11,10 +10,12 @@
   <br>
   Build automation and image publication to GitHub Container Registry (GHCR).
 </p>
-
 <p align="center">
   <a href="https://github.com/MikaPST/texturecraft-web/actions/workflows/publish-image.yml">
     <img src="https://github.com/MikaPST/texturecraft-web/actions/workflows/publish-image.yml/badge.svg" alt="Build and publish TextureCraft Web">
+  </a>
+  <a href="https://github.com/MikaPST/texturecraft-web/releases/latest">
+    <img src="https://img.shields.io/github/v/release/MikaPST/texturecraft-web?label=Release&logo=github&color=blue" alt="Latest Release">
   </a>
   <a href="https://github.com/MikaPST/texturecraft-web/pkgs/container/texturecraft-web">
     <img src="https://ghcr-badge.egpl.dev/mikapst/texturecraft-web/latest_tag?trim=major&label=GHCR" alt="GHCR image tag">
@@ -32,6 +33,7 @@ The official TextureCraft project provides a browser-based version of its 3D tex
 
 The goals are to:
 
+- Publish a matching GitHub Release only after the Docker build and push succeed.
 - Build the TextureCraft Web Web application from the upstream source code.
 - Publish a ready-to-run Docker image to GHCR.
 - Automatically rebuild the image every week to incorporate upstream changes.
@@ -61,6 +63,14 @@ The image is published to GitHub Container Registry:
 ```text
 ghcr.io/mikapst/texturecraft-web:latest
 ```
+
+Each official upstream release is also published under its exact version tag, for example:
+
+```text
+ghcr.io/mikapst/texturecraft-web:vX.Y.Z
+```
+
+Use a versioned tag if you want to keep a deployment on a specific release. The `latest` tag updates when an image is published.
 
 ### Option 1 — Docker Compose (recommended)
 
@@ -136,25 +146,31 @@ Do not expose an unencrypted HTTP port directly to the public Internet. Restrict
 
 ## Automated builds
 
-GitHub Actions builds and publishes the image automatically.
+GitHub Actions checks the official [TextureCraft releases](https://github.com/storytold/texturecraft/releases), builds the WebAssembly application from the selected upstream tag and publishes the image to GHCR.
 
 | Trigger | Behaviour |
 |---|---|
-| Weekly schedule | Rebuilds from the upstream `main` branch |
-| Manual workflow dispatch | Allows a build to be triggered manually |
-| Changes to this repository's README, Compose file or workflow | Triggers a new build |
+| Weekly schedule | Checks the latest official TextureCraft release and builds it if it has not already been published here |
+| Manual workflow dispatch | Builds the latest official release, or a specified `upstream_tag` |
+| Force rebuild | Rebuilds an already published version with `force_rebuild: true` |
+| Changes to packaging files on `main` | Rebuilds the current official upstream release with the updated workflow |
 
-Each successful build publishes:
+### Published tags
 
-- `latest` — the most recently published image.
-- `upstream-<commit>` — identifies the upstream commit used for the build.
+- `latest` — the latest successfully published image (mutable tag).
+- `<upstream-version>` — the exact official upstream tag, for example `vX.Y.Z`.
+- `upstream-<commit>` — the upstream source commit used for the image (first 12 hexadecimal characters).
 
-The build targets `linux/amd64` and `linux/arm64`. Actual compatibility depends on the upstream build and the target platform.
+The image targets both `linux/amd64` and `linux/arm64`. The workflow checks out **the official upstream release tag**, rather than compiling `main` as the versioned source.
+
+### GitHub Releases
+
+After a successful Docker build and GHCR push, the workflow creates or updates a [GitHub Release](https://github.com/MikaPST/texturecraft-web/releases) matching the upstream tag. It includes the upstream release notes, source link and commit, Docker tags, supported architectures and (when available) the published image digest.
+
+The Release badge at the top of this README updates automatically. Scheduled runs skip versions already released here. You can force a rebuild from **Actions → Build and publish TextureCraft Web → Run workflow**.
 
 > [!IMPORTANT]
-> A weekly build does not guarantee that upstream changes are compatible or stable. TextureCraft is under active development. Test new images before relying on them for important work.
-
-The `latest` tag is mutable and may point to a newer image after a successful build.
+> A GitHub Release is created only after the Docker image has been successfully published. The `latest` tag may change after a rebuild; pin a versioned image tag for a stable deployment. Auxiliary source repositories (for example `craft-fonts`) may be checked out separately and are not necessarily pinned to the upstream release commit.
 
 ## Unraid Community Applications
 
@@ -165,6 +181,7 @@ The Unraid template will reference the published GHCR image and provide configur
 - **Unraid Community Applications repository:** [MikaPST/unraid-community-apps](https://github.com/MikaPST/unraid-community-apps)
 
 This repository contains the image build, publication workflow and Docker Compose configuration. The Unraid Community Applications template is maintained separately.
+- **Template:** [texturecraft-web.xml](https://github.com/MikaPST/unraid-community-apps/blob/main/templates/texturecraft-web.xml)
 
 ## Upstream project
 
@@ -175,6 +192,8 @@ TextureCraft is an open-source project developed by the ArtCraft Team and its co
 - **Official releases:** [TextureCraft releases](https://github.com/storytold/texturecraft/releases)
 
 This repository builds a browser-based version of the upstream application and packages its generated static web files into a Docker image. It is an independent community-maintained packaging project.
+
+The MikaPST GitHub Release tracks the upstream version but represents independent Docker packaging, not an official TextureCraft distribution.
 
 ## License and attribution
 
